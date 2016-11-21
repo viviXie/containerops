@@ -55,7 +55,7 @@ function showActionHistoryView(history,actionname) {
 
              _.each(history.logList,function(log,index){
                 let allLogs = log.substr(23);
-                allLogs = allLogStr.replace(/\\n/g , "\\u003cbr /u003e")
+                allLogs = allLogStr.replace(/\\n/g , "\\u003cbr /\\u003e")
                 let logJson = JSON.parse(allLogs);
                 let num = index + 1;
                 sequenceLogDetail[index] = logJson.INFO;

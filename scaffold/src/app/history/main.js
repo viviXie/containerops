@@ -81,7 +81,6 @@ function getHistoryList() {
                             hppItem.append(hvRow);
 
                             if (vd.sequenceList.length > 0) {
-                              
                                 if(vd.sequenceList.length > 5){
                                     var sdRowArray = forVdSequenceList(vd.sequenceList,0,5,pd.id,pd.name,vd.id,vd.name);
                                     _.each(sdRowArray,function(row){
@@ -255,17 +254,13 @@ let historyAbout;
 export function getSequenceDetail(selected_history) {
     historyAbout = selected_history;
     loading.show();
-
     constant.sequenceRunStatus = selected_history.sequenceStatus;
-
     var promise = historyDataService.getPipelineHistory(selected_history.pipelineName, selected_history.versionName, selected_history.sequence);
     promise.done(function(data) {
         loading.hide();
         constant.sequenceRunData = data.define.stageList;
         constant.refreshSequenceRunData = data.define.stageList;
         constant.sequenceLinePathArray = data.define.lineList;
-
-
         if (data.define.stageList.length > 0) {
             initSequenceView(selected_history);
         }
@@ -374,8 +369,8 @@ function initSequenceView(selected_history) {
                 .attr("height", constant.svgHeight)
                 .attr("id", "buttonView");
 
-             showSequenceView(constant.sequenceRunData);       
-             sequenceUtil.initButton();
+            showSequenceView(constant.sequenceRunData);
+            sequenceUtil.initButton();
         }
     });
 }
@@ -740,12 +735,6 @@ function showRefreshSequenceView(refreshPipelineSequenceData) {
         })
 
     initSequenceStageLine();
-    // if(constant.sequenceRunStatus == 1 || constant.sequenceRunStatus == 2){
-    //     timerSequencePipelineData(historyAbout)
-    // }else{
-    //     //showSequenceView(constant.sequenceRunData);
-    //     // clearInterval(timer);
-    // }
 }
 
 function initSequenceStageLine() {
@@ -1189,7 +1178,6 @@ function getPathData(startPoint, endPoint) {
     return "M" + x0 + "," + y0 + "C" + x2 + "," + y0 + " " + x3 + "," + y1 + " " + x1 + "," + y1;
 }
 
-
 function zoomed() {
     constant.sequencePipelineView.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
     constant.sequenceActionsView.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
@@ -1205,7 +1193,6 @@ function clicked(d, i) {
     d3.select(this).transition()
         .transition()
 }
-
 
 function nozoom() {
     d3.event.preventDefault();
