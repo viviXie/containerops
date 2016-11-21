@@ -30,6 +30,7 @@ export function initHistoryPage() {
     var promise = historyDataService.getPipelineHistories();
     promise.done(function(data) {
         loading.hide();
+        console.log( "data" ,data.pipelineList)
         constant.sequenceAllList = data.pipelineList;
         getHistoryList();
     });
@@ -49,7 +50,9 @@ function getHistoryList() {
         type: "GET",
         cache: false,
         success: function(data) {
-            $(".forHistory").html($(data));
+
+            $("#main").html($(data));
+            alert(0)
             $("#historyPipelinelist").show("slow");
 
             $(".pipelinelist_body").empty();
