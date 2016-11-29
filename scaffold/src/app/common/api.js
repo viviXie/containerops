@@ -42,6 +42,14 @@ let apiUrlConf = {
 		"pipelineHistory" : "/v2/{namespace}/{repository}/workflow/v1/log/{pipelineName}/{version}?sequence={sequence}",
 		"action" : "/v2/{namespace}/{repository}/workflow/v1/log/{pipelineName}/{version}/{sequence}/stage/{stageName}/action/{actionName}",
 		"relation" : "/v2/{namespace}/{repository}/workflow/v1/log/{pipelineName}/{version}/{sequence}/{lineId}"
+	},
+
+	"newHistory" : {
+		"pipelineHistories" : "/v2/{namespace}/{repository}/workflow/v1/log/list",
+		"pipelineHistory" : "/v2/{namespace}/{repository}/workflow/v1/log/{pipelineName}/{version}?sequence={sequence}",
+		"action" : "/v2/{namespace}/{repository}/workflow/v1/log/{pipelineName}/{version}/{sequence}/stage/{stageName}/action/{actionName}",
+		"relation" : "/v2/{namespace}/{repository}/workflow/v1/log/{pipelineName}/{version}/{sequence}/{lineId}",
+		"resource" : "/v2/{namespace}/{repository}/workflow/v1/log/{pipelineName}/{version}/{sequence}/{lineId}"
 	}
 }
 let pendingPromise;
@@ -72,6 +80,80 @@ function initApiInvocation(skipAbort){
 	}
 	loading.show();
 }
+
+
+// new history 
+export let workflowHistoryApi = {
+	
+	"workflowHistories" : function () {
+		initApiInvocation();
+		var promise = $.ajax({
+			"url" : apiUrlConf.host + apiUrlConf.history.pipelineHistories.replace(/{namespace}/g, "demo").replace(/{repository}/g, "demo"),
+			"type" : "GET",
+			"dataType" : "json",
+			"cache": false
+		});
+		pendingPromise.push(promise);
+		return promise;
+	},
+	"workflowHistory" : function(workflowName,versionName,workflowRunSequence){
+		initApiInvocation();
+		var promise = $.ajax({
+	        "url": apiUrlConf.host + apiUrlConf.history.pipelineHistory.replace(/{namespace}/g, "demo").replace(/{repository}/g, "demo").replace(/{pipelineName}/g, workflowName).replace(/{version}/g, versionName).replace(/{sequence}/g, workflowRunSequence),
+	        "type": "GET",
+	        "dataType": "json",
+	        "cache": false
+	    });
+	    pendingPromise.push(promise);
+	    return promise;
+	},
+	"action" : function(workflowName,versionName,workflowRunSequence,stageName,actionName){
+		initApiInvocation();
+		var promise = $.ajax({
+	        "url": apiUrlConf.host + apiUrlConf.history.action.replace(/{namespace}/g, "demo").replace(/{repository}/g, "demo").replace(/{pipelineName}/g, workflowName).replace(/{version}/g, versionName).replace(/{sequence}/g, workflowRunSequence).replace(/{stageName}/g, stageName).replace(/{actionName}/g, actionName),
+	        "type": "GET",
+	        "dataType": "json",
+	        "cache": false
+	    });
+	    pendingPromise.push(promise);
+	    return promise;
+	},
+	"relation" : function(workflowName,versionName,workflowRunSequence,sequenceLineId){
+		initApiInvocation();
+		var promise = $.ajax({
+	        "url": apiUrlConf.host + apiUrlConf.history.relation.replace(/{namespace}/g, "demo").replace(/{repository}/g, "demo").replace(/{pipelineName}/g, workflowName).replace(/{version}/g, versionName).replace(/{sequence}/g, workflowRunSequence).replace(/{lineId}/g, sequenceLineId),
+	        "type": "GET",
+	        "dataType": "json",
+	        "cache": false
+	    });
+	    pendingPromise.push(promise);
+	    return promise;
+	},
+	"workflowResource" : function(workflowName,versionName,workflowRunSequence,resourceName){
+		initApiInvocation();
+		var promise = $.ajax({
+	        "url": apiUrlConf.host + apiUrlConf.history.relation.replace(/{namespace}/g, "demo").replace(/{repository}/g, "demo").replace(/{pipelineName}/g, workflowName).replace(/{version}/g, versionName).replace(/{sequence}/g, workflowRunSequence).replace(/{lineId}/g, sequenceLineId),
+	        "type": "GET",
+	        "dataType": "json",
+	        "cache": false
+	    });
+	    pendingPromise.push(promise);
+	    return promise;
+	},
+	"actionResource" : function(workflowName,versionName,workflowRunSequence,resourceName){
+		initApiInvocation();
+		var promise = $.ajax({
+	        "url": apiUrlConf.host + apiUrlConf.history.relation.replace(/{namespace}/g, "demo").replace(/{repository}/g, "demo").replace(/{pipelineName}/g, workflowName).replace(/{version}/g, versionName).replace(/{sequence}/g, workflowRunSequence).replace(/{lineId}/g, sequenceLineId),
+	        "type": "GET",
+	        "dataType": "json",
+	        "cache": false
+	    });
+	    pendingPromise.push(promise);
+	    return promise;
+	}
+}
+
+
 
 // pipeline
 export let pipelineApi = {
@@ -236,7 +318,7 @@ export let componentApi = {
 	}
 }
 
-
+// history
 export let historyApi = {
 	
 	"pipelineHistories" : function () {

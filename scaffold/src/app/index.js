@@ -41,6 +41,14 @@ $(".menu-history").on('click',function(event){
     $(event.currentTarget).parent().parent().children().removeClass("active");
     $(event.currentTarget).parent().addClass("active");
 })
+
+
+/* new history*/
+$(".menu-newhistory").on('click',function(event){
+    initHistoryPage();
+    $(event.currentTarget).parent().parent().children().removeClass("active");
+    $(event.currentTarget).parent().addClass("active");
+})
 // initActionLinkView();
 
 // sidebar nav control

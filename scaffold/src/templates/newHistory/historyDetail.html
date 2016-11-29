@@ -1,0 +1,79 @@
+<html>
+	<header>
+		<!-- 新 Bootstrap 核心 CSS 文件 -->
+<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
+
+<!-- 可选的Bootstrap主题文件（一般不用引入） -->
+<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap-theme.min.css">
+<link rel="stylesheet" href="./font-awesome/css/font-awesome-3.0.min.css"/>
+<link rel="stylesheet" href="./font-awesome/css/font-awesome.min.css"/>
+
+<!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+<script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script>
+
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<script src="http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+	</header>
+	<body>
+
+<div class="mcover">
+<!--
+	* 默认 detailItem  margin-top: 400px;
+	  
+	  ** 需要使用滚动监听来实现来判断 
+	   
+	  *** 当detailItem margin-top = 0时    
+	  		#detailItem > nav.navbar addClass="floatingHeader";
+	  		#detailContant .style("padding-top", #detailItem > nav.navbar.height())
+	  		.floatingHeader  {
+			    position: fixed;
+			    top: 0;
+			    left: 0;
+			    right: 0;
+			    z-index: 1;
+			    box-shadow: 0 4px 4px -2px rgba(0,0,0,0.4);
+				}
+
+	-->
+
+
+
+
+	<div id="detailItem" class="row">
+		<nav class="navbar navbar-default" role="navigation">
+		  <div class="container-fluid">
+		    <div class="navbar-header">
+		    	<div class="navbar-brand">
+			      <a id="closeDetail" href="javascript:void(1);"><i class="icon-remove-sign"></i></a>
+			      <span id="workflowTitle" class="detailTitle">workflowName</span>
+		      </div>
+		    </div>
+		  </div>
+		</nav>	
+
+		<div id="detailContant">
+			<div id="draw-d3-workflow" class="col-md-12 item-padding">
+				
+			</div>
+			<div id="draw-d3-sequenceResouce" class="col-md-12 item-padding">
+				<div id="draw-d3-pritition" class="col-md-3">sequenceResource - pritition </div>
+				<div id="draw-d3-lineChart" class="col-md-9">折线图</div>
+			</div>
+			<div id="history-pipeline-detail" class="col-md-12 item-padding widget-body">
+
+			</div>
+		</div>
+
+	</div>
+</div>
+
+
+
+
+
+
+
+		
+	</body>
+</html>

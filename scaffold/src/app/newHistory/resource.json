@@ -1,0 +1,51 @@
+{
+	"pipeline": {
+		"name":"workflow",
+		"id" : 10,
+		"status":2,
+		"resourec":[
+			{
+				"CPU":
+					{
+						"limit":"",
+						"request":"",
+						"usage":""
+					},
+					"memory":
+					{
+						"limit":"",
+						"request":"",
+						"usage":""
+					},
+					"net":
+					{
+						"limit":"",
+						"usage":""
+					},
+					"net":
+					{
+						"limit":"",
+						"usage":""
+					}
+			}
+		],
+		"actionList":[
+			{
+				"name":"v1.9",
+				"id": 101,
+				"status":2,
+				"sequenceList":[
+					{
+						"name":"v1.9",
+						"id": 101,
+						"status":2,
+					}
+				]
+			}
+		]
+
+		}
+	}
+		
+		 
+}
