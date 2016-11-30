@@ -9,9 +9,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+@import "./ui/normalize";
 @import "./theme/variables";
 @import "./theme/mixins";
 
+/*@import "../../node_modules/bootstrap/scss/bootstrap";*/
 @import "../../node_modules/bootstrap-sass/assets/stylesheets/bootstrap";
 @import "../../node_modules/font-awesome/scss/font-awesome";
 @import "../../node_modules/select2/src/scss/core";
@@ -20,9 +22,11 @@ limitations under the License. */
 @import "../../node_modules/messenger/build/css/messenger";
 @import "../../node_modules/messenger/build/css/messenger-spinner";
 @import "../../node_modules/messenger/build/css/messenger-theme-future";
+@import "../../node_modules/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox";
 
 @import "./theme/bootstrap-override";
 
+@import "./theme/font";
 @import "./theme/general";
 @import "./theme/global-transitions";
 @import "./theme/base";

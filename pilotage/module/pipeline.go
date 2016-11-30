@@ -81,10 +81,10 @@ func CreateNewPipeline(namespace, repository, pipelineName, pipelineVersion stri
 	}
 
 	pipelineInfo := new(models.Pipeline)
-	pipelineInfo.Namespace = namespace
-	pipelineInfo.Repository = repository
-	pipelineInfo.Pipeline = pipelineName
-	pipelineInfo.Version = pipelineVersion
+	pipelineInfo.Namespace = strings.TrimSpace(namespace)
+	pipelineInfo.Repository = strings.TrimSpace(repository)
+	pipelineInfo.Pipeline = strings.TrimSpace(pipelineName)
+	pipelineInfo.Version = strings.TrimSpace(pipelineVersion)
 	pipelineInfo.VersionCode = 1
 
 	err = pipelineInfo.GetPipeline().Save(pipelineInfo).Error
@@ -528,7 +528,7 @@ func (pipelineInfo *Pipeline) CreateNewVersion(define map[string]interface{}, ve
 	newPipelineInfo.Repository = pipelineInfo.Repository
 	newPipelineInfo.Pipeline = pipelineInfo.Pipeline.Pipeline
 	newPipelineInfo.Event = pipelineInfo.Event
-	newPipelineInfo.Version = versionName
+	newPipelineInfo.Version = strings.TrimSpace(versionName)
 	newPipelineInfo.VersionCode = leastPipeline.VersionCode + 1
 	newPipelineInfo.State = models.PipelineStateDisable
 	newPipelineInfo.Manifest = pipelineInfo.Manifest
@@ -1385,13 +1385,15 @@ func (pipelineLog *PipelineLog) Stop(reason string, runState int64) {
 		return
 	}
 
-	notEndStageLogList := make([]models.StageLog, 0)
-	new(models.StageLog).GetStageLog().Where("pipeline = ?", pipelineLog.ID).Where("run_state != ?", models.StageLogStateRunSuccess).Where("run_state != ?", models.StageLogStateRunFailed).Find(&notEndStageLogList)
+	if runState != models.PipelineLogStateRunSuccess {
+		notEndStageLogList := make([]models.StageLog, 0)
+		new(models.StageLog).GetStageLog().Where("pipeline = ?", pipelineLog.ID).Where("run_state != ?", models.StageLogStateRunSuccess).Where("run_state != ?", models.StageLogStateRunFailed).Find(&notEndStageLogList)
 
-	for _, stageLogInfo := range notEndStageLogList {
-		stage := new(StageLog)
-		stage.StageLog = &stageLogInfo
-		stage.Stop(StageStopScopeAll, StageStopReasonRunFailed, models.StageLogStateRunFailed)
+		for _, stageLogInfo := range notEndStageLogList {
+			stage := new(StageLog)
+			stage.StageLog = &stageLogInfo
+			stage.Stop(StageStopScopeAll, StageStopReasonRunFailed, models.StageLogStateRunFailed)
+		}
 	}
 
 	pipelineLog.RunState = runState

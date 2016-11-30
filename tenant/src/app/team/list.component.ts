@@ -4,7 +4,7 @@ import { TeamDataService } from './data.service';
 
 @Component({
   selector: 'list-team',
-  templateUrl: '../../template/team/list.html'
+  template: require('../../template/team/list.html')
 })
 
 export class TeamListComponent implements OnInit { 
@@ -25,10 +25,10 @@ export class TeamListComponent implements OnInit {
 	}	
 
 	showTeamDetail(id): void{
-		this.router.navigate(['/team', id]);
+		this.router.navigate(['team', id]);
 	}
 
 	addMember(id): void{
-		this.router.navigate(['/team', id, "addMember"]);
+		this.router.navigate(['team', id, 'member','add']);
 	}
 }
