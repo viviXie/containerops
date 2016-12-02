@@ -70,16 +70,16 @@ export function showSequenceView(currenceSequenceData){
 			.attr("transform", function(d, i) {
 					d.width = constant.svgStageWidth;
 					d.height = constant.svgStageHeight;
-					d.translateX = i * constant.PipelineNodeSpaceSize + constant.pipelineNodeStartX;
-					d.translateY = constant.pipelineNodeStartY;
+					d.translateX = i * constant.PipelineNodeSpaceSize + constant.workflowNodeStartX;
+					d.translateY = constant.workflowNodeStartY;
 					return "translate(" + d.translateX + "," + d.translateY + ")";
 			})
 			.attr("translateX", function(d, i) {
-					return i * constant.PipelineNodeSpaceSize + constant.pipelineNodeStartX;
+					return i * constant.PipelineNodeSpaceSize + constant.workflowNodeStartX;
 			})
-			.attr("translateY", constant.pipelineNodeStartY)
+			.attr("translateY", constant.workflowNodeStartY)
 			.on("click", function(d, i) {
-				// constant.pipelineView.selectAll("#pipeline-element-popup").remove();
+				// constant.workflowView.selectAll("#workflow-element-popup").remove();
 				// notify("click stage now");
 				if (d.status == true) {
 
@@ -124,7 +124,7 @@ function initSequenceStageLine(){
 
 	var diagonal = d3.svg.diagonal();
 
-	var sequencePipelineLineViewId = "pipeline-line-view";
+	var sequencePipelineLineViewId = "workflow-line-view";
 
 	constant.sequenceLineView[sequencePipelineLineViewId] = constant.sequenceLinesView.append("g")
 			.attr("width", constant.svgWidth)
@@ -133,15 +133,15 @@ function initSequenceStageLine(){
 
 	constant.sequencePipelineView.selectAll("image").each(function(d, i) {
 
-		/* draw the main line of pipeline */
+		/* draw the main line of workflow */
 		if (i != 0) {
 			if (d.status == true) {
 					constant.sequenceLineView[sequencePipelineLineViewId]
 							.append("path")
 							.attr("d", function() {
 									return diagonal({
-											source: { x: d.translateX - constant.PipelineNodeSpaceSize, y: constant.pipelineNodeStartY + constant.svgStageHeight / 2 },
-											target: { x: d.translateX + 2, y: constant.pipelineNodeStartY + constant.svgStageHeight / 2 }
+											source: { x: d.translateX - constant.PipelineNodeSpaceSize, y: constant.workflowNodeStartY + constant.svgStageHeight / 2 },
+											target: { x: d.translateX + 2, y: constant.workflowNodeStartY + constant.svgStageHeight / 2 }
 									});
 							})
 							.attr("fill", "none")
@@ -152,8 +152,8 @@ function initSequenceStageLine(){
 							.append("path")
 							.attr("d", function() {
 									return diagonal({
-											source: { x: d.translateX - constant.PipelineNodeSpaceSize, y: constant.pipelineNodeStartY + constant.svgStageHeight / 2 },
-											target: { x: d.translateX + 2, y: constant.pipelineNodeStartY + constant.svgStageHeight / 2 }
+											source: { x: d.translateX - constant.PipelineNodeSpaceSize, y: constant.workflowNodeStartY + constant.svgStageHeight / 2 },
+											target: { x: d.translateX + 2, y: constant.workflowNodeStartY + constant.svgStageHeight / 2 }
 									});
 							})
 							.attr("fill", "none")
@@ -163,13 +163,13 @@ function initSequenceStageLine(){
 		}
 
 		if (d.type == constant.PIPELINE_START) {
-			/* draw the vertical line and circle for start node  in lineView -> pipeline-line-view */
+			/* draw the vertical line and circle for start node  in lineView -> workflow-line-view */
 			constant.sequenceLineView[sequencePipelineLineViewId]
 					.append("path")
 					.attr("d", function() {
 							return diagonal({
-									source: { x: d.translateX + constant.svgStageWidth / 2, y: constant.pipelineNodeStartY + constant.svgStageHeight / 2 },
-									target: { x: d.translateX + constant.svgStageWidth / 2, y: constant.pipelineNodeStartY + constant.svgStageHeight + 10 }
+									source: { x: d.translateX + constant.svgStageWidth / 2, y: constant.workflowNodeStartY + constant.svgStageHeight / 2 },
+									target: { x: d.translateX + constant.svgStageWidth / 2, y: constant.workflowNodeStartY + constant.svgStageHeight + 10 }
 							})
 					})
 					.attr("fill", "none")
@@ -182,7 +182,7 @@ function initSequenceStageLine(){
 							return d.translateX + constant.svgStageWidth / 2;
 					})
 					.attr("cy", function(cd, ci) {
-							return constant.pipelineNodeStartY + constant.svgStageHeight + 19;
+							return constant.workflowNodeStartY + constant.svgStageHeight + 19;
 					})
 					.attr("r", function(cd, ci) {
 							return 8;
@@ -288,7 +288,7 @@ function initSequenceActionByStage() {
               }
           })
           .on("mouseout", function(ad, ai) {
-              constant.sequencePipelineView.selectAll("#pipeline-element-popup").remove();
+              constant.sequencePipelineView.selectAll("#workflow-element-popup").remove();
           })
           .on("mouseover", function(ad, ai) {
               var x = ad.translateX;
@@ -303,7 +303,7 @@ function initSequenceActionByStage() {
                       "x": x,
                       "y": y,
                       "text": text,
-                      "popupId": "pipeline-element-popup",
+                      "popupId": "workflow-element-popup",
                       "parentView": constant.sequencePipelineView,
                       "width": width
                   };
@@ -479,7 +479,7 @@ function setSequencePath(options) {
 
   endPoint = { x: toDom.translateX - 12, y: toDom.translateY + 4 };
 
-  constant.sequenceLineView[options.pipelineLineViewId]
+  constant.sequenceLineView[options.workflowLineViewId]
       .append("path")
       .attr("d", getPathData(startPoint, endPoint))
       .attr("fill", "none")
@@ -575,9 +575,9 @@ function zoomed() {
 
 
 // sequence on action detail
-function getActionHistory(pipelineName,stageName,actionName,actionLogID) {
+function getActionHistory(workflowName,stageName,actionName,actionLogID) {
     loading.show();
-    var promise = historyDataService.getActionRunHistory(pipelineName,stageName,actionName,actionLogID);
+    var promise = historyDataService.getActionRunHistory(workflowName,stageName,actionName,actionLogID);
     promise.done(function(data) {
         loading.hide();
         showActionHistoryView(data.result,actionName);
@@ -598,7 +598,7 @@ function showActionHistoryView(history,actionname) {
         type: "GET",
         cache: false,
         success: function(data) {
-					$("#history-pipeline-detail").html($(data));
+					$("#history-workflow-detail").html($(data));
 
 					$("#actionHistoryTitle").text("Action history -- " + actionname);
 
@@ -683,9 +683,9 @@ function getLogDetails (logOutputData){
 
 }
 // sequence on actionLink  detail
-function getLineHistory(pipelineName,pipelineSequenceID,startActionId,endActionId) {
+function getLineHistory(workflowName,workflowSequenceID,startActionId,endActionId) {
     loading.show();
-    var promise = historyDataService.getLineDataInfo(pipelineName,pipelineSequenceID,startActionId,endActionId);
+    var promise = historyDataService.getLineDataInfo(workflowName,workflowSequenceID,startActionId,endActionId);
     promise.done(function(data) {
         loading.hide();
         showLineHistoryView(data.define);
@@ -706,7 +706,7 @@ function showLineHistoryView(history) {
         type: "GET",
         cache: false,
         success: function(data) {
-            $("#history-pipeline-detail").html($(data));
+            $("#history-workflow-detail").html($(data));
 
             var inputStream = JSON.stringify(history.input,undefined,2);
             $("#action-input-stream").val(inputStream);
@@ -722,4 +722,4 @@ function showLineHistoryView(history) {
 
 
 
-// init Sequence Resource ViewpipelineVersion
+// init Sequence Resource ViewworkflowVersion

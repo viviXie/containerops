@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import {initPipelinePage,hidePipelineEnv} from "./pipeline/main";
+import {initWorkflowPage,hideWorkflowEnv} from "./workflow/main";
 import {initComponentPage} from "./component/main";
 import {initHistoryPage} from "./history/main";
 
@@ -22,10 +22,10 @@ $._messengerDefaults = {
     extraClasses: 'messenger-fixed messenger-theme-future messenger-on-top'
 }
 
-initPipelinePage();
+initWorkflowPage();
 
-$(".menu-pipeline").on('click',function(event){
-    initPipelinePage();
+$(".menu-workflow").on('click',function(event){
+    initWorkflowPage();
     $(event.currentTarget).parent().parent().children().removeClass("active");
     $(event.currentTarget).parent().addClass("active");
 })
@@ -65,19 +65,7 @@ $(".nav-control").on("click",function(event){
     }
 })
 
-$(".pipeline-close-env").on('click', function() {
-    hidePipelineEnv();
+$(".workflow-close-env").on('click', function() {
+    hideWorkflowEnv();
 });
-
-// function initActionLinkView() {
-//     actionLinkView.append("rect")
-//         .attr("x",10)
-//         .attr("y",10)
-//         .attr("rx",10)
-//         .attr("ry",10)
-//         .attr("width",120)
-//         .attr("height",40)
-//         .attr("stroke","red")
-//         .attr("fill","red");
-// }
 

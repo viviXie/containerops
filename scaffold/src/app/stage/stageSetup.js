@@ -15,6 +15,7 @@ limitations under the License.
  */
 
 import * as stageSetupData from "./stageSetupData";
+import {workflowVars} from "../workflow/workflowVar";
 
 export function initStageSetup(stage){
     stageSetupData.getStageSetupData(stage);
@@ -29,13 +30,13 @@ export function initStageSetup(stage){
         stageSetupData.setStageTimeout();
     });
 
-    // $("#stage-env").val(stageSetupData.data.env);
-    // $("#stage-env").on("blur",function(){
-    //     stageSetupData.setStageEnv();
-    // });
-
-    // $("#stage-callback-url").val(stageSetupData.data.callbackurl);
-    // $("#stage-callback-url").on("blur",function(){
-    //     stageSetupData.setStageCallbackUrl();
-    // });
+    // use global vars
+    var globalvars = _.map(workflowVars,function(item){
+        return "@"+item[0]+"@";
+    });
+    $(".allowFromVar").autocomplete({
+        source:[globalvars],
+        limit: 100,
+        visibleLimit: 5
+    }); 
 }

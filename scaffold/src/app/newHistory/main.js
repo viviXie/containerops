@@ -26,7 +26,7 @@ export function initWorkflowHistoryPage() {
 	var promise = historyDataService.getworkflowHistories();
 	promise.done(function(data){
 		loading.hide();
-		constant.historyList = data.pipelineList;
+		constant.historyList = data.workflowList;
 		constant.workflowResource = data.historyResouce(workflowName,workflowId,workflowResource);
 		getHistoryPartition();
 		getHistoryList();
@@ -117,7 +117,7 @@ function getHistoryList(){
 
 							if(vd.sequenceList.length > 0){
 								_.each(vd.sequenceList, function(sd){
-									var hsRow =`<tr data-id=`+ sd.pipelineSequenceID + ` data-pname=` + wd.name + ` data-version=` + vd.name + ` data-versionid=` + vd.id + ` class="sequence-row"><td></td><td></td>`;
+									var hsRow =`<tr data-id=`+ sd.workflowSequenceID + ` data-pname=` + wd.name + ` data-version=` + vd.name + ` data-versionid=` + vd.id + ` class="sequence-row"><td></td><td></td>`;
 
 									if(sd.status == true){
 										hsRow += `<td><div class="state-list">

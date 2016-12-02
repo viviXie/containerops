@@ -1,0 +1,73 @@
+<!-- 
+    Copyright 2014 Huawei Technologies Co., Ltd. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+        http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License. 
+-->
+<div id="workflowdesign" class="hidden-div">
+    <div class="h5 row" id="designerMenubar">
+        <div style="float:left;">
+            <span class="btn backtolist" title="back to list" style="float:left;"></span>
+            <div id="selected_workflow" class="selected-workflow-text"></div>
+            <span class="workflow-state"></span>
+        </div> 
+        <div style="margin-top:-0.6em;float:right;">
+            <div style="float:right" class="btn-toolbar">
+                <button type="button" class="btn btn-info checkworkflow">
+                    <i class="glyphicon glyphicon-check" style="font-size:16px"></i>
+                    <span style="margin-left:5px">Check</span>
+                </button>
+                <div class="btn-group">
+                    <button class="btn btn-primary" data-toggle="dropdown" data-original-title="" title="" aria-expanded="false">
+                        <i class="glyphicon glyphicon-floppy-disk" style="font-size:16px"></i>
+                        <span style="margin: 0 5px">Save</span>
+                        <i class="fa fa-caret-down"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item saveworkflow">Save</a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a class="dropdown-item newworkflowversion">Save As New Version</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-inverse loghistory">
+                    <i class="fa fa-history" style="font-size:16px"></i>
+                    <span style="margin-left:5px">History</span>
+                </button>
+                <button type="button" class="btn btn-success newworkflowindesigner">
+                    <i class="glyphicon glyphicon-plus" style="font-size:16px"></i>
+                    <span style="margin-left:5px">New WorkFlow</span>
+                </button>
+                <button type="button" class="btn btn-warning envsetting">
+                    <i class="glyphicon glyphicon-cog" style="font-size:16px"></i>
+                    <span style="margin-left:5px">Env Setting</span>
+                </button>
+                <button type="button" class="btn btn-danger varsetting">
+                    <i class="glyphicon glyphicon-cog" style="font-size:16px"></i>
+                    <span style="margin-left:5px">Global Var</span>
+                </button>
+            </div>
+        </div>         
+    </div> 
+    <div class="row">
+        <div id="div-d3-main-svg" class="col-md-12"></div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <section>
+                <header>
+                    <h5>
+                        <span class="glyphicon glyphicon-option-horizontal designer-split" draggable="true"></span>
+                    </h5>
+                </header>
+                <div class="widget-body" id="workflow-info-edit">
+                </div>    
+            </section>
+        </div>
+    </div>
+</div>
