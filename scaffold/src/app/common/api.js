@@ -46,7 +46,7 @@ let apiUrlConf = {
 		"relation" : "/v2/{namespace}/{repository}/workflow/v1/log/{workflowName}/{version}/{sequence}/{lineId}"
 	},
 
-	"setting" : "/v2/{namespace}/{repository}/system/v1/setting"
+	"setting" : "/v2/{namespace}/{repository}/system/v1/setting",
 
 	"newHistory" : {
 		"workflowHistories" : "/v2/{namespace}/{repository}/workflow/v1/log/list",
