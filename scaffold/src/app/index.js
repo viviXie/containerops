@@ -17,6 +17,7 @@ limitations under the License.
 import {initWorkflowPage,hideWorkflowEnv} from "./workflow/main";
 import {initComponentPage} from "./component/main";
 import {initHistoryPage} from "./history/main";
+import {initSystemSettingPage} from "./setting/main";
 
 $._messengerDefaults = {
     extraClasses: 'messenger-fixed messenger-theme-future messenger-on-top'
@@ -42,6 +43,11 @@ $(".menu-history").on('click',function(event){
     $(event.currentTarget).parent().addClass("active");
 })
 
+$(".menu-setting").on('click',function(event){
+    initSystemSettingPage();
+    $(event.currentTarget).parent().parent().children().removeClass("active");
+    $(event.currentTarget).parent().addClass("active");
+})
 
 /* new history*/
 $(".menu-newhistory").on('click',function(event){
