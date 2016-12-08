@@ -29,10 +29,6 @@ export function setActionType(){
     data.action.type = $("#action-component-select").val();
 }
 
-export function setActionName(){
-    data.action.name = $("#action-name").val();
-}
-
 export function setActionTimeout(){
     data.action.timeout = $("#action-timeout").val();
 }
@@ -63,16 +59,15 @@ export function getUseNodePort(){
     }
 }
 
-export function setUseNodePort(isuse){
-    if(isuse){
-        data.service.spec.type = "NodePort";
+export function setServiceType(){
+    data.service.spec.type = $("#service-type-select").val();
+    if(data.service.spec.type == "NodePort"){
         _.each(data.service.spec.ports,function(item){
           if(_.isUndefined(item.nodePort)){
             item.nodePort = "";
           }
         })
     }else{
-        data.service.spec.type = "ClusterIP";
         _.each(data.service.spec.ports,function(item){
           if(!_.isUndefined(item.nodePort)){
             delete item.nodePort;
@@ -84,22 +79,19 @@ export function setUseNodePort(isuse){
 export function setServicePort(event){
   var target = $(event.currentTarget);
   var index = target.parent().data("index");
-  var value = target.val();
-  data.service.spec.ports[index].port = parseInt(value);
+  data.service.spec.ports[index].port = target.val();
 }
 
 export function setServiceTargetPort(event){
   var target = $(event.currentTarget);
   var index = target.parent().data("index");
-  var value = target.val();
-  data.service.spec.ports[index].targetPort = parseInt(value);
+  data.service.spec.ports[index].targetPort = target.val();
 }
 
 export function setServiceNodePort(event){
   var target = $(event.currentTarget);
   var index = target.parent().data("index");
-  var value = target.val();
-  data.service.spec.ports[index].nodePort = parseInt(value);
+  data.service.spec.ports[index].nodePort = target.val();
 }
 
 export function removeServicePorts(event){
@@ -131,24 +123,12 @@ export function setCPURequest(){
   data.pod.spec.containers[0].resources.requests.cpu = $("#k8s-cpu-requests").val();
 }
 
-export function getMemoryLimit(){
-  var value = data.pod.spec.containers[0].resources.limits.memory;
-  return Number(value.substring(0,value.length-2));
-}
-
 export function setMemoryLimit(){
-  var value = $("#k8s-memory-limits").val();
-  data.pod.spec.containers[0].resources.limits.memory = value.toString() + "Mi";
-}
-
-export function getMemoryRequest(){
-  var value = data.pod.spec.containers[0].resources.requests.memory;
-  return Number(value.substring(0,value.length-2));
+  data.pod.spec.containers[0].resources.limits.memory = $("#k8s-memory-limits").val();
 }
 
 export function setMemoryRequest(){
-  var value = $("#k8s-memory-requests").val();
-  data.pod.spec.containers[0].resources.requests.memory = value.toString() + "Mi";
+  data.pod.spec.containers[0].resources.requests.memory = $("#k8s-memory-requests").val();
 }
 
 export function setServiceAdvanced(value){
@@ -189,8 +169,8 @@ var metadata = {
       "containers": [
         {
           "resources": {
-            "limits":{"cpu": 2.0, "memory": "1024Mi"},
-            "requests":{"cpu": 1.0, "memory": "128Mi"}
+            "limits":{"cpu": "0.2", "memory": "1024"},
+            "requests":{"cpu": "0.1", "memory": "128"}
           }
         }
       ]

@@ -88,8 +88,14 @@ func SetRouters(m *macaron.Macaron) {
 
 						m.Post("/exec/:workflow", handler.ExecuteWorkflowV1Handler)
 
-						m.Put("/event/:workflow/register", handler.PutActionRegisterV1Handler)
-						m.Put("/event/:workflow/:event", handler.PutActionEventV1Handler)
+						m.Group("/runtime", func() {
+							m.Post("/event/:workflow/register", handler.PostActionRegisterV1Handler)
+							m.Post("/event/:workflow/:event", handler.PostActionEventV1Handler)
+
+							m.Post("/var/:workflow", handler.PostActionSetVarV1Handler)
+
+							m.Post("/linkstart/:workflow/:target", handler.PostActionLinkStartV1Handler)
+						})
 
 						m.Group("/log", func() {
 							m.Get("/list", handler.GetWorkflowHistoriesV1Handler)

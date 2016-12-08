@@ -36,11 +36,11 @@ const (
 	//CharacterComponentEvent is Event use for component.
 	CharacterComponentEvent
 
-	EVENT_COMPONENT_START = "COMPONENT_START"
-	EVENT_TASK_START      = "TASK_START"
-	EVENT_TASK_STATUS     = "TASK_STATUS"
-	EVENT_TASK_RESULT     = "TASK_RESULT"
-	EVENT_COMPONENT_STOP  = "COMPONENT_STOP"
+	EVENT_COMPONENT_START = "CO_COMPONENT_START"
+	EVENT_TASK_START      = "CO_TASK_START"
+	EVENT_TASK_STATUS     = "CO_TASK_STATUS"
+	EVENT_TASK_RESULT     = "CO_TASK_RESULT"
+	EVENT_COMPONENT_STOP  = "CO_COMPONENT_STOP"
 )
 
 const (
@@ -143,20 +143,21 @@ func (r *WorkflowVar) GetWorkflowVar() *gorm.DB {
 	return db.Model(&WorkflowVar{})
 }
 
-type RuntimeWorkflowVar struct {
-	ID        int64  `json:"id" gorm:"primary_key"`          //
-	Workflow  int64  `json:"workflow"`                       //
-	RunID     int64  `json:"runID"`                          //
-	Key       string `json:"key" gorm:"type:varchar(255)"`   //
-	Default   string `json:"default" gorm:"type:longtext"`   //
-	Vaule     string `json:"value" gorm:"type:longtext"`     //
-	ChangeLog string `json:"changelog" gorm:"type:longtext"` //
+type WorkflowVarLog struct {
+	ID           int64  `json:"id" gorm:"primary_key"`          //
+	Workflow     int64  `json:"workflow"`                       //
+	FromWorkflow int64  `json:"workflow"`                       //
+	Sequence     int64  `json:"sequence"`                       //
+	Key          string `json:"key" gorm:"type:varchar(255)"`   //
+	Default      string `json:"default" gorm:"type:longtext"`   //
+	Vaule        string `json:"value" gorm:"type:longtext"`     //
+	ChangeLog    string `json:"changelog" gorm:"type:longtext"` //
 }
 
-func (r *RuntimeWorkflowVar) TableName() string {
-	return "runtime_workflow_var"
+func (r *WorkflowVarLog) TableName() string {
+	return "workflow_var_log"
 }
 
-func (r *RuntimeWorkflowVar) GetRuntimeWorkflowVar() *gorm.DB {
-	return db.Model(&RuntimeWorkflowVar{})
+func (r *WorkflowVarLog) GetWorkflowVarLog() *gorm.DB {
+	return db.Model(&WorkflowVarLog{})
 }

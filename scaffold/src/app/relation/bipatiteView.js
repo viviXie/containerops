@@ -77,11 +77,8 @@ export function bipatiteView(importJson,outputJson,linePathData){
 
 function getRelationArray(importTree,outputTree){
 
-	// var visibleInputStr = getVisibleInputStr();
-	// var visibleOutputStr = getVisibleOutputStr();
-	// var visibleInput = visibleInputStr.split(";");
- //    var visibleOutput = visibleOutputStr.split(";");
 	return initWorkflow(importTree,outputTree);
+
 }
 
 
@@ -100,7 +97,7 @@ function initView(importTree,outputTree,linePathData){
 		relationLineInit(linePathData.relation[startKey]);
 	}
 	
-	
+	var mouseX,mouseY;
 	
 	$("span.property").mousedown(function(event){
 
@@ -112,16 +109,19 @@ function initView(importTree,outputTree,linePathData){
 		var _startX = $(event.target).offset().left,
 	        _startY = $(event.target).offset().top,
 	        startClass = $(event.target).parent().attr("class"),
-	    	fromPath = $(event.target).parent().attr("data-path").replace(/\-/g,'.');
+	    	fromPath = $(event.target).parent().attr("data-path").replace(/\-/g,'.'),
 	    	fromPath = fromPath.substring(5);
+	    	mouseX = event.clientX;
+	    	mouseY = event.clientY;
 		
 	    document.onmousemove = function(event){
-	    	event.pageX
-	    	event.pageY
 	    	dragDropLine([_startX,_startY,event.pageX,event.pageY]);
 	    }
 
 	    document.onmouseup = function(event){
+	    	if(mouseX == event.clientX && mouseY == event.clientY){
+	    		return false;
+	    	}
 	    	document.onmousemove = null;   
         	document.onmouseup = null; 
         	
@@ -155,7 +155,12 @@ function initView(importTree,outputTree,linePathData){
 	    		
 	    	}
 	    }
-	})
+	}).mouseup(function(event){
+		if(mouseX == event.clientX && mouseY == event.clientY){
+    		document.onmousemove = null; 
+    		document.onmouseup = null; 
+    	}
+	});
 
 	
 

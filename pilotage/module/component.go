@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/Huawei/containerops/pilotage/models"
+	"github.com/Huawei/containerops/pilotage/utils"
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -254,9 +255,12 @@ func UpdateComponentInfo(componentInfo models.Component) error {
 		}
 
 		if timeout, ok := componentSetupDetail["timeout"].(string); ok {
-			timeoutInt, err := strconv.ParseInt(timeout, 10, 64)
-			if err != nil {
-				return errors.New("component's timeout is not a string")
+			timeoutInt := int64(0)
+			if timeout != "" {
+				timeoutInt, err = strconv.ParseInt(timeout, 10, 64)
+				if err != nil {
+					return errors.New("component's timeout is not a string")
+				}
 			}
 			componentInfo.Timeout = timeoutInt
 		}
@@ -968,7 +972,15 @@ func (kube *kubeComponent) GetPodDefine(serviceAddr string) (map[string]interfac
 	if len(containers) < 1 {
 		containerInfo := make(map[string]interface{})
 		containerInfo["name"] = kube.runID + "-pod"
-		containerInfo["image"] = kube.componentInfo.Endpoint
+
+		imageName := kube.componentInfo.ImageName
+		if kube.componentInfo.ImageTag != "" {
+			imageName += ":" + kube.componentInfo.ImageTag
+		} else {
+			imageName += ":leatest"
+		}
+
+		containerInfo["image"] = imageName
 
 		containers = append(containers, containerInfo)
 	}
@@ -1055,6 +1067,9 @@ func (kube *kubeComponent) GetPodDefine(serviceAddr string) (map[string]interfac
 	allEventMap["CO_RUN_ID"] = kube.runID
 	allEventMap["CO_EVENT_LIST"] = strings.TrimPrefix(eventListStr, ";")
 	allEventMap["CO_DATA"] = string(dataMapBytes)
+	allEventMap["CO_SET_GLOBAL_VAR_URL"] = projectAddr + "/v2/" + actionLog.Namespace + "/" + actionLog.Repository + "/workflow/v1/runtime/var/" + strconv.FormatInt(actionLog.Workflow, 10)
+	allEventMap["CO_LINKSTART_TOKEN"] = utils.MD5(actionLog.Action + kube.runID)
+	allEventMap["CO_LINKSTART_URL"] = projectAddr + "/v2/" + actionLog.Namespace + "/" + actionLog.Repository + "/workflow/v1/runtime/linkstart/" + strconv.FormatInt(actionLog.Workflow, 10) + "/"
 
 	for key, value := range allEventMap {
 		tempEnv := make(map[string]interface{})
@@ -1070,7 +1085,13 @@ func (kube *kubeComponent) GetPodDefine(serviceAddr string) (map[string]interfac
 			container["name"] = kube.runID + "-pod"
 		}
 		if _, ok := container["image"]; !ok {
-			container["image"] = kube.componentInfo.Endpoint
+			imageName := kube.componentInfo.ImageName
+			if kube.componentInfo.ImageTag != "" {
+				imageName += ":" + kube.componentInfo.ImageTag
+			} else {
+				imageName += ":leatest"
+			}
+			container["image"] = imageName
 		}
 
 		if env, ok := container["env"]; ok {
@@ -1085,6 +1106,7 @@ func (kube *kubeComponent) GetPodDefine(serviceAddr string) (map[string]interfac
 			}
 		}
 		container["env"] = envList
+		container["imagePullPolicy"] = "IfNotPresent"
 
 		ports := make([]map[string]interface{}, 0)
 		serviceAddrInfo := strings.Split(serviceAddr, ":")

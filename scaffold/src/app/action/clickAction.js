@@ -30,7 +30,11 @@ import { loading } from "../common/loading";
 import { getConflict, svgTree } from "./actionConflict";
 import {workflowVars} from "../workflow/workflowVar";
 
+let filter = "";
+
 export function clickAction(sd, si) {
+    filter = "";
+    
     if (sd.component) {
         showActionEditor(sd);
     } else {
@@ -70,6 +74,10 @@ function showActionEditor(action) {
             // view select init
             $("#action-component-select").select2({
                 minimumResultsForSearch: Infinity
+            });
+
+            $("#service-type-select").select2({
+               minimumResultsForSearch: Infinity
             });
             
             // use global vars
@@ -117,6 +125,8 @@ function showComponentList(action) {
         success: function(data) {
             $("#actionMain").html($(data));
 
+            $(".component-filter-input").val(filter);
+
             $(".newcomponent").on('click', function() {
                 $(".menu-component").parent().addClass("active");
                 $(".menu-workflow").parent().removeClass("active");
@@ -125,8 +135,15 @@ function showComponentList(action) {
                 showNewComponent(true);
             })
 
+            $("#searchComponent").on('click', function() {
+                filter = $(".component-filter-input").val();
+                showComponentList(action);
+            })
+
+            var components = doFilter(filter);
+console.log(components)
             $(".componentlist_body").empty();
-            _.each(allComponents, function(item) {
+            _.each(components, function(item) {
                 var pprow = `<tr class="pp-row">
                                 <td class="pptd">
                                     <span class="glyphicon glyphicon-menu-down treeclose treecontroller" data-name=` 
@@ -170,14 +187,15 @@ function showComponentList(action) {
             $(".cload").on("click", function(event) {
                 var target = $(event.currentTarget);
                 var componentName = target.parent().parent().data("pname");
+                var componentVersionName = target.parent().parent().data("version");
                 var componentVersionID = target.parent().parent().data("versionid");
-                LoadComponentToAction(componentName, componentVersionID, action);
+                LoadComponentToAction(componentName, componentVersionName, componentVersionID, action);
             })
         }
     });
 }
 
-function LoadComponentToAction(componentName, componentVersionID, action) {
+function LoadComponentToAction(componentName, componentVersionName, componentVersionID, action) {
     var promise = getComponent(componentName, componentVersionID);
     promise.done(function(data) {
         loading.hide();
@@ -194,7 +212,8 @@ function LoadComponentToAction(componentName, componentVersionID, action) {
             action.env = [].concat(data.env);
             action.component = {
                 "name": componentName,
-                "versionid": componentVersionID
+                "versionid": componentVersionID,
+                "versionname" : componentVersionName
             }
             showActionEditor(action);
         }
@@ -211,4 +230,14 @@ function LoadComponentToAction(componentName, componentVersionID, action) {
 
 function jsonChanged(root, json) {
     root.val(JSON.stringify(json));
+}
+
+function doFilter(filter){
+    var tempComponents = _.map(allComponents,function(item){
+        return $.extend(true,{},item);
+    });
+
+    return _.filter(tempComponents,function(item){
+        return item.name.toLowerCase().indexOf(filter) >= 0;
+    })
 }
