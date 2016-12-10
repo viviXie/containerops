@@ -17,6 +17,7 @@ limitations under the License.
 import {initWorkflowPage,hideWorkflowEnv} from "./workflow/main";
 import {initComponentPage} from "./component/main";
 import {initHistoryPage} from "./history/main";
+import {initWorkflowHistoryPage} from "./dashboard-history/main";
 import {initSystemSettings,initSystemSettingPage} from "./setting/main";
 
 $._messengerDefaults = {
