@@ -23,10 +23,6 @@ import (
 	"github.com/Huawei/containerops/pilotage/handler"
 )
 
-// /v1
-// /v2
-// 	/root,config,system,admin,adminstration,guest,org,orgni..,devops,containerops,clond,cloneNatinve,nativeCloud
-
 //SetRouters is pilotage router's definition fucntion.
 func SetRouters(m *macaron.Macaron) {
 	m.Group("/v2", func() {
@@ -97,8 +93,11 @@ func SetRouters(m *macaron.Macaron) {
 							m.Post("/linkstart/:workflow/:target", handler.PostActionLinkStartV1Handler)
 						})
 
-						m.Group("/log", func() {
-							m.Get("/list", handler.GetWorkflowHistoriesV1Handler)
+						m.Group("/history", func() {
+							m.Get("/workflow/list", handler.GetWorkflowHistoriesV1Handler)
+							m.Get("/workflow/:workflow/version/list", handler.GetWorkflowVersionHistoriesV1Handler)
+							m.Get("/workflow/:workflow/version/:version/list", handler.GetWorkflowSequenceHistoriesV1Handler)
+							m.Get("/workflow/:workflow/version/:version/sequence/:sequence/action/:action/linkstart/list", handler.GetActionLinkstartListV1Handler)
 
 							m.Get("/:workflow/:version", handler.GetWorkflowHistoryDefineV1Handler)
 							m.Get("/:workflow/:version/:sequence/stage/:stage", handler.GetStageHistoryInfoV1Handler)

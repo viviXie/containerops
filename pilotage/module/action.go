@@ -587,34 +587,36 @@ func (actionLog *ActionLog) Listen() error {
 		return errors.New("can't listen target action,change action's state failed")
 	}
 
-	canStartChan := make(chan bool, 1)
+	canStartChan := make(chan models.ActionLog, 1)
 	go func() {
+		aLog := *actionLog.ActionLog
 		for true {
 			time.Sleep(1 * time.Second)
 
-			err := actionLog.GetActionLog().Where("id = ?", actionLog.ID).First(actionLog).Error
+			err := aLog.GetActionLog().Where("id = ?", aLog.ID).First(&aLog).Error
 			if err != nil {
-				log.Error("[actionLog's Listen]:error when get actionLog's info:", actionLog, " ===>error is:", err.Error())
-				canStartChan <- false
+				log.Error("[actionLog's Listen]:error when get actionLog's info:", aLog, " ===>error is:", err.Error())
+				canStartChan <- *new(models.ActionLog)
 				break
 			}
-			if actionLog.Requires == "" || actionLog.Requires == "[]" {
-				log.Info("[actionLog's Listen]:actionLog", actionLog, " is ready and will start")
-				canStartChan <- true
+			if aLog.Requires == "" || aLog.Requires == "[]" {
+				canStartChan <- aLog
 				break
 			}
 		}
 	}()
 
 	go func() {
-		canStart := <-canStartChan
-		if !canStart {
-			log.Error("[actionLog's Listen]:actionLog can't start", actionLog)
-			actionLog.Stop(StageStopReasonRunFailed, models.ActionLogStateRunFailed)
+		aLog := <-canStartChan
+
+		Log := new(ActionLog)
+		Log.ActionLog = &aLog
+		if aLog.ID == 0 {
+			log.Error("[actionLog's Listen]:actionLog can't start", aLog)
+			Log.Stop(StageStopReasonRunFailed, models.ActionLogStateRunFailed)
 			return
 		}
-
-		go actionLog.Start()
+		go Log.Start()
 	}()
 
 	return nil
@@ -778,6 +780,7 @@ func (actionLog *ActionLog) Stop(reason string, runState int64) {
 	}
 
 	actionLog.RunState = runState
+	actionLog.FailReason = reason
 	err = actionLog.GetActionLog().Save(actionLog).Error
 	if err != nil {
 		log.Error("[actionLog's Stop]:error when change action state:", actionLog, " ===>error is:", err.Error())
@@ -1102,8 +1105,8 @@ func (actionLog *ActionLog) sendDataToService(data []byte) ([]*http.Response, er
 }
 
 func (actionLog *ActionLog) WaitActionDone() {
-	_, err := strconv.ParseInt(actionLog.Timeout, 10, 64)
-	if err != nil {
+	timeout, err := strconv.ParseInt(actionLog.Timeout, 10, 64)
+	if err != nil || timeout < 0 {
 		log.Error("[actionLog's WaitActionDone]:error when parse action's timeout, want a number, got:", actionLog.Timeout)
 		actionLog.Stop(ActionStopReasonRunFailed, models.ActionLogStateRunFailed)
 	}
@@ -1482,6 +1485,8 @@ func (actionLog *ActionLog) LinkStartWorkflow(runId, token, workflowName, workfl
 	preInfoBytes, _ := json.Marshal(preInfoMap)
 
 	workflowLog.PreWorkflow = actionLog.Workflow
+	workflowLog.PreStage = actionLog.Stage
+	workflowLog.PreAction = actionLog.ID
 	workflowLog.PreWorkflowInfo = string(preInfoBytes)
 
 	err = workflowLog.GetWorkflowLog().Save(workflowLog).Error

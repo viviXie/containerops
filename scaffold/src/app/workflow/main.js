@@ -26,12 +26,13 @@ import { initButton } from "./initButton";
 import {getSequenceDetail} from "../history/main";
 import {initWorkflowEnv,showWorkflowEnv} from "./workflowEnv";
 import {initWorkflowVar,showWorkflowVar} from "./workflowVar";
+import {initWorkflowSetting} from "./workflowSetting";
 
 
 export let allWorkflows;
 
-export let workflowData;
-let workflowDataOriginalCopy,linePathAryOriginalCopy;
+export let workflowData,workflowSettingData;
+let workflowDataOriginalCopy,linePathAryOriginalCopy,workflowSettingDataOriginalCopy;
 let workflowName, workflowVersion, workflowVersionID,workflowHasHistory;
 
 let splitStartY;
@@ -144,15 +145,10 @@ function getWorkflowData() {
     setCurrentSelectedItem(null);
     var promise = workflowDataService.getWorkflow(workflowName, workflowVersionID);
     promise.done(function(data) {
-        // workflowDataOriginalCopy = _.map(data.stageList,function(item){
-        //     return $.extend(true,{},item);
-        // });
-        // linePathAryOriginalCopy = _.map(data.lineList,function(item){
-        //     return $.extend(true,{},item);
-        // });
         loading.hide();
         workflowData = data.stageList;
         setLinePathAry(data.lineList); 
+        workflowSettingData = data.setting;
         showWorkflowDesigner(data.status);
     });
     promise.fail(function(xhr, status, error) {
@@ -181,7 +177,7 @@ function showNoWorkflow() {
 }
 
 function beforeShowNewWorkflow() {
-    if(_.isEqual(workflowDataOriginalCopy,workflowData) && _.isEqual(linePathAryOriginalCopy,linePathAry)){
+    if(isWorkflowChanged()){
         showNewWorkflow();
     }else{
         var actions = [{
@@ -265,7 +261,7 @@ function showWorkflowDesigner(state) {
 
             $(".workflow-state").on('click',function(event){
                 if($(event.currentTarget).hasClass("workflow-off")){
-                    if(!workflowCheck(workflowData)){
+                    if(!workflowCheck(workflowData,workflowSettingData)){
                         notify("This workflow does not pass the availability check, please make it available before ", "error");
                     }else{
                         beforeRunWorkflow();
@@ -276,7 +272,7 @@ function showWorkflowDesigner(state) {
             });
 
             $(".checkworkflow").on('click', function() {
-                workflowCheck(workflowData);
+                workflowCheck(workflowData,workflowSettingData);
             });
 
             $(".saveworkflow").on('click', function() {
@@ -322,7 +318,9 @@ function showWorkflowDesigner(state) {
             linePathAryOriginalCopy = _.map(linePathAry,function(item){
                 return $.extend(true,{},item);
             });
-            
+            workflowSettingDataOriginalCopy = $.extend(true,{},workflowSettingData);
+
+            initWorkflowSetting(workflowSettingData);
         }
     });
 }
@@ -334,7 +332,7 @@ function drawWorkflow() {
 }
 
 export function saveWorkflowData(next) {
-    var promise = workflowDataService.saveWorkflow(workflowName, workflowVersion, workflowVersionID, workflowData, linePathAry);
+    var promise = workflowDataService.saveWorkflow(workflowName, workflowVersion, workflowVersionID, workflowData, linePathAry, workflowSettingData);
     promise.done(function(data) {
         workflowDataOriginalCopy = _.map(workflowData,function(item){
             return $.extend(true,{},item);
@@ -342,6 +340,8 @@ export function saveWorkflowData(next) {
         linePathAryOriginalCopy = _.map(linePathAry,function(item){
             return $.extend(true,{},item);
         });
+        workflowSettingDataOriginalCopy = $.extend(true,{},workflowSettingData);
+
         loading.hide();
         if (!next) {
             notify(data.message, "success");
@@ -381,7 +381,7 @@ function showNewWorkflowVersion() {
             $("#pp-name-newversion").val(workflowName);
 
             $("#newppVersionBtn").on('click', function() {
-                var promise = workflowDataService.addWorkflowVersion(workflowName, workflowVersionID, workflowData, linePathAry);
+                var promise = workflowDataService.addWorkflowVersion(workflowName, workflowVersionID, workflowData, linePathAry, workflowSettingData);
                 if (promise) {
                     promise.done(function(data) {
                         loading.hide();
@@ -422,7 +422,7 @@ function cancelNewPPVersionPage() {
 
 // run workflow
 function beforeRunWorkflow() {
-    if(_.isEqual(workflowDataOriginalCopy,workflowData) && _.isEqual(linePathAryOriginalCopy,linePathAry)){
+    if(isWorkflowChanged()){
         runWorkflow();
     }else{
         var actions = [{
@@ -461,7 +461,7 @@ function runWorkflow() {
 
 //stop workflow
 function beforeStopWorkflow() {
-    if(_.isEqual(workflowDataOriginalCopy,workflowData) && _.isEqual(linePathAryOriginalCopy,linePathAry)){
+    if(isWorkflowChanged()){
         stopWorkflow();
     }else{
         var actions = [{
@@ -499,7 +499,7 @@ function stopWorkflow() {
 }
 
 function beforeBackToList() {
-    if(_.isEqual(workflowDataOriginalCopy,workflowData) && _.isEqual(linePathAryOriginalCopy,linePathAry)){
+    if(isWorkflowChanged()){
         initWorkflowPage();
     }else{
         var actions = [{
@@ -524,7 +524,7 @@ export function getWorkflowToken(){
 }
 
 function beforeShowLog() {
-    if(_.isEqual(workflowDataOriginalCopy,workflowData) && _.isEqual(linePathAryOriginalCopy,linePathAry)){
+    if(isWorkflowChanged()){
         showLogHistory();
     }else{
         var actions = [{
@@ -556,6 +556,11 @@ function showLogHistory(){
     };
     getSequenceDetail(workflowInfo);
 }
+
+function isWorkflowChanged(){
+    return _.isEqual(workflowDataOriginalCopy,workflowData) && _.isEqual(linePathAryOriginalCopy,linePathAry) &&  _.isEqual(workflowSettingDataOriginalCopy,workflowSettingData);
+}
+
 // $("#workflow-select").on('change',function(){
 //     showVersionList();
 // })
