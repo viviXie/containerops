@@ -17,6 +17,9 @@ import { TeamManageMemberComponent } from '../team/manage-member.component';
 import { TeamManageAuthComponent } from '../team/manage-auth.component';
 // repo
 import { RepoListComponent }  from '../repository/list.component';
+import { RepoAddComponent } from '../repository/add.component';
+import { RepoDetailComponent }  from '../repository/detail.component';
+import { RepoAddTeamComponent }  from '../repository/addteam.component';
 
 const indexRouting: Routes = [
   {
@@ -62,6 +65,18 @@ const indexRouting: Routes = [
       { 
       	path: 'repository', 
       	component: RepoListComponent 
+      },
+      { 
+        path: 'repository/add', 
+        component: RepoAddComponent 
+      },
+      { 
+        path: 'repository/:id', 
+        component: RepoDetailComponent 
+      },
+      { 
+        path: 'repository/:id/addteam', 
+        component: RepoAddTeamComponent 
       }
     ]
   }
