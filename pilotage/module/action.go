@@ -20,10 +20,10 @@ import (
 const (
 	ActionStopReasonTimeout = "TIME_OUT"
 
-	ActionStopReasonSendDataFailed = "SendDataFailed"
+	ActionStopReasonSendDataFailed = "SEND_DATA_FAILED"
 
-	ActionStopReasonRunSuccess = "RunSuccess"
-	ActionStopReasonRunFailed  = "RunFailed"
+	ActionStopReasonRunSuccess = "ACTION_RUN_SUCCESS"
+	ActionStopReasonRunFailed  = "ACTION_RUN_FAILED"
 )
 
 var (
@@ -166,6 +166,7 @@ func CreateNewActions(db *gorm.DB, workflowInfo *models.Workflow, stageInfo *mod
 					podConfigKey := "pod"
 					serviceConfigKey := "service"
 					if useAdvanced {
+						configMap["useAdvanced"] = true
 						podConfigKey = "pod_advanced"
 						serviceConfigKey = "service_advanced"
 					}
@@ -564,9 +565,10 @@ func (actionLog *ActionLog) GetActionConsoleLog(key string, size int64) (map[str
 			logServerUrl += "?scroll=10m"
 			bodyMap := map[string]interface{}{
 				"query": map[string]interface{}{
-					"match": map[string]string{
-						"tag":  "kubernetes.var.log.containers." + actionLog.ContainerId,
-						"type": "phrase"}},
+					"match": map[string]interface{}{
+						"tag": map[string]string{
+							"query": "kubernetes.var.log.containers." + actionLog.ContainerId,
+							"type":  "phrase"}}},
 				"size": size,
 				"sort": "@timestamp"}
 
@@ -579,6 +581,7 @@ func (actionLog *ActionLog) GetActionConsoleLog(key string, size int64) (map[str
 			logReqBody, _ = json.Marshal(bodyMap)
 		}
 
+		log.Info("[actionLog's GetActionConsoleLog]:send req to ", logServerUrl, " req body is :", string(logReqBody))
 		resp, err := http.Post(logServerUrl, "application/json", bytes.NewReader(logReqBody))
 		if err != nil {
 			go kube.Update()
@@ -1525,30 +1528,32 @@ func (actionLog *ActionLog) changeGlobalVar() error {
 		kubeSettingMap["nodeIP"] = nodeIPStr
 	}
 
-	podConfigMap, ok := kubeSettingMap["podConfig"].(map[string]interface{})
-	if ok {
-		podConfig, err := changeMapInfoWithGlobalVar(actionLog.Workflow, actionLog.Sequence, podConfigMap)
-		if err != nil {
-			log.Error("[actionLog's changeGlobalVar]:action:", actionLog.Action, " error when change pod config:", err.Error())
-			return errors.New("action's pod config is illegal")
+	if useAdvanced, ok := kubeSettingMap["useAdvanced"].(bool); !ok || !useAdvanced {
+		podConfigMap, ok := kubeSettingMap["podConfig"].(map[string]interface{})
+		if ok {
+			podConfig, err := changeMapInfoWithGlobalVar(actionLog.Workflow, actionLog.Sequence, podConfigMap)
+			if err != nil {
+				log.Error("[actionLog's changeGlobalVar]:action:", actionLog.Action, " error when change pod config:", err.Error())
+				return errors.New("action's pod config is illegal")
+			}
+
+			kubeSettingMap["podConfig"] = podConfig
 		}
 
-		kubeSettingMap["podConfig"] = podConfig
-	}
+		serviceConfigMap, ok := kubeSettingMap["serviceConfig"].(map[string]interface{})
+		if ok {
+			serviceConfig, err := changeMapInfoWithGlobalVar(actionLog.Workflow, actionLog.Sequence, serviceConfigMap)
+			if err != nil {
+				log.Error("[actionLog's changeGlobalVar]:action:", actionLog.Action, " error when change service config:", err.Error())
+				return errors.New("action's service config is illegal")
+			}
 
-	serviceConfigMap, ok := kubeSettingMap["serviceConfig"].(map[string]interface{})
-	if ok {
-		serviceConfig, err := changeMapInfoWithGlobalVar(actionLog.Workflow, actionLog.Sequence, serviceConfigMap)
-		if err != nil {
-			log.Error("[actionLog's changeGlobalVar]:action:", actionLog.Action, " error when change service config:", err.Error())
-			return errors.New("action's service config is illegal")
+			kubeSettingMap["serviceConfig"] = serviceConfig
 		}
 
-		kubeSettingMap["serviceConfig"] = serviceConfig
+		kubeSettingBytes, _ := json.Marshal(kubeSettingMap)
+		actionLog.Kubernetes = string(kubeSettingBytes)
 	}
-
-	kubeSettingBytes, _ := json.Marshal(kubeSettingMap)
-	actionLog.Kubernetes = string(kubeSettingBytes)
 
 	err = new(models.ActionLog).GetActionLog().Save(actionLog.ActionLog).Error
 	if err != nil {
@@ -1559,7 +1564,7 @@ func (actionLog *ActionLog) changeGlobalVar() error {
 	return nil
 }
 
-func (actionLog *ActionLog) LinkStartWorkflow(runId, token, workflowName, workflowVersion string, startJson map[string]interface{}) error {
+func (actionLog *ActionLog) LinkStartWorkflow(runId, token, workflowName, workflowVersion, eventName, eventType string, startJson map[string]interface{}) error {
 	expectToken := utils.MD5(actionLog.Action + runId)
 	if expectToken != token {
 		log.Info("[actionLog's LinkStartWorkflow]:action(", actionLog.ID, ") runid is:(", runId, ") error when check token: want:", expectToken, " got:", token)
@@ -1578,9 +1583,14 @@ func (actionLog *ActionLog) LinkStartWorkflow(runId, token, workflowName, workfl
 	authMap["type"] = AuthTypeWorkflowDefault
 	authMap["token"] = AuthTokenDefault
 	authMap["runID"] = runId
-	authMap["eventName"] = "linkstart"
-	authMap["eventType"] = "system-linkstart"
+	authMap["eventName"] = eventName
+	authMap["eventType"] = eventType
 	authMap["time"] = time.Now().Format("2006-01-02 15:04:05")
+	pass, err := checkInstanceNum(workflowInfo.ID)
+	if !pass {
+		log.Error("[actionLog's LinkStartWorkflow]:error when checkworkflow instance num:", err.Error())
+		return err
+	}
 
 	workflowLog, err := Run(workflowInfo.ID, authMap, string(startDataBytes))
 	if err != nil {

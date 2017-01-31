@@ -22,6 +22,7 @@ const sequenceWidth = 20;
 const sequenceHeight = 20;
 const sequencePad = 10;
 const sequenceMargin = 3;
+const stageMargin = 5;
 
 var currentPage = 1;
 var workflowNum = 10;
@@ -34,8 +35,8 @@ var workflowDialog = '#workflowDialog';
 var breadcrumbs = '#infos .breadcrumbs';
 var workflowSearch = '#historyMap .search';
 var antistop = '#historyMap .keywords';
-var summaryWidth = $(historyList).width() - sequencePad * 3 *2;
-var sequenceNum = Math.floor(summaryWidth / (sequenceWidth + sequenceMargin));
+var summaryWidth = '';
+var sequenceNum = 10;
 
 var resUrl = {
 	"workflow":"/v2/demo/demo/workflow/v1/history/workflow/list",
@@ -58,21 +59,29 @@ var sequences = [];
 var currentStartedWorkflows = [];
 var filterWorkflow = '';
 
+export function getSequenceNum(){
+	summaryWidth = $(historyList).width() - sequencePad * 3 *2;
+	sequenceNum = summaryWidth ? Math.floor(summaryWidth / (sequenceWidth + sequenceMargin)): sequenceNum;
+}
+
 export function getHistoryList(keywords,filterType){
+	keywords?$(antistop).val(keywords):'';
 	getWorkflows(currentPage,workflowNum,isInitPages,keywords,filterType);
 }
 
 function getWorkflows(page,workflowNum,isInitPages,keywords,filterType) {
 	loading.show();
-	var promise = historyDataService.getWorkflows(page,workflowNum,isInitPages,keywords,filterType);
+	var promise = historyDataService.getWorkflows(page,workflowNum,keywords,filterType);
 	promise.done(function(data) {
-    loading.hide();
-		totalWorkflows = data.totalWorkflows;
-		workflows = data.workflows;
-		renderWorkflows(workflows,historyList);
-		getVersions(workflows[0].workflowName,workflows[0].workflowId);
-		if(isInitPages){
-			getPages(totalWorkflows,historyPages);
+		loading.hide();
+		if(data.workflows.length>0){
+			totalWorkflows = data.totalWorkflows;
+			workflows = data.workflows;
+			renderWorkflows(workflows,historyList);
+			getVersions(workflows[0].workflowName,workflows[0].workflowId);
+			if(isInitPages){
+				getPages(totalWorkflows,historyPages);
+			}
 		}
   });
   promise.fail(function(xhr, status, error) {
@@ -133,13 +142,14 @@ function renderWorkflows(workflows,selector) {
 		var isIn = i===0? 'in':'';
 		var isExtend = i===0?' extended ':'';
 		var extendImg = i===0?'assets/images/icon-extend.png':'assets/images/icon-collapse.png';
+		var dataset = 'data-workflowname="'+w.workflowName+'" data-workflowid="'+w.workflowId+'"';
 
 		workflow += '<div class="item">'+
 									'<div class="title">'+
 								    '<img src="assets/images/icon-workflow.png"/>'+
 								    '<span>'+w.workflowName+'</span>'+
-								    '<a href="#'+w.workflowName+'" data-toggle="collapse" class="extend">'+
-								      '<img src="'+extendImg+'" class="extend-icon '+isExtend+hasWorkflow+'" data-workflowname="'+w.workflowName+'" data-workflowid="'+w.workflowId+'" >'+
+								    '<a href="#'+w.workflowName+'" data-toggle="collapse" class="extend" '+dataset+'>'+
+								      '<img src="'+extendImg+'" class="extend-icon '+isExtend+hasWorkflow+'" '+dataset+'>'+
 								    '</a>'+
 								  '</div>'+
 								  '<div id="'+w.workflowName+'" class="collapse version-tab '+isIn+'">'+
@@ -148,7 +158,7 @@ function renderWorkflows(workflows,selector) {
 	});
 	
 	$(selector).append(workflow);
-	addWorkflowEvent()
+	addWorkflowEvent();
 }
 
 function renderVersions(versions,selector) {
@@ -190,12 +200,22 @@ function renderSequences(workflowName,workflowId,version,sequences) {
 
 			recordItem += '<div class="item-record pad-lt-ten '+isBorder+' '+isShow+'">';
 
-			var time='<div class="time">'+
-						      '<span class="date">'+s.date+'</span>'+
-						      '<span class="hour">'+s.time+'</span>'+
-						    '</div>';
+			var arr = s.date.split('-');
 
-			var stages = '<div class="stages '+isStagesBg+'">';
+			var startedWorkflowName = '';
+
+			if(s.startWorkflowName){
+				startedWorkflowName = '<img src="../../assets/images/preworkflow.png" class="year" title="'+s.startWorkflowName+'">';
+			}
+
+			var time='<div class="time">'+
+				      startedWorkflowName+
+				      '<span class="date">'+arr[1]+'-'+arr[2]+'</span>'+
+				      '<span class="hour">'+s.time+'</span>'+
+				    '</div>';
+
+
+			var stages = '<div class="stages '+isStagesBg+'"><div class="wrap">';
 
 			s.stages.map(function(st,i){
 				var stageResult = '';
@@ -205,8 +225,10 @@ function renderSequences(workflowName,workflowId,version,sequences) {
 					stageResult = stageColor[st.runResult];
 				}
 
+				var error = st['error'] ? 'title="'+st['error']+'"': '';
+
 				var stagesItem = '<div class="item-stage">'+
-	            						'<h5 class="stage-name '+stageResult+'"></h5>';
+	            						'<h5 class="stage-name '+stageResult+'" '+error+'></h5>';
 				var actions = '';
 
 				if(st.actions.length>0){
@@ -248,7 +270,7 @@ function renderSequences(workflowName,workflowId,version,sequences) {
 				stages+=stagesItem;
 			})
 
-			stages+='</div>';
+			stages+='</div></div>';
 
 			recordItem=recordItem+time+stages;
 			recordItem+='</div>';
@@ -272,9 +294,22 @@ function renderSequences(workflowName,workflowId,version,sequences) {
 
 	$('#'+version.versionId).append(sequence);
 
+	resetWrapWidth();
 	addMoreEvent();
 	addStartWorkflowEvent(version);
 	addActionDetailEvent('#historyList .action-name');
+}
+
+function resetWrapWidth(){
+	$('.stages').each(function(index, el) {
+		var width = 0;
+		var $stage = $(this);
+		$stage.find('.item-stage').each(function(i,e){
+			var stageWidth = $(this).width()+ stageMargin;
+			width += stageWidth;
+		})
+		$stage.find('.wrap').css('width',width+'px');
+	});
 }
 
 function addMoreEvent(){
@@ -301,6 +336,9 @@ function addMore($this){
 
 function addStartWorkflowEvent(version){
 	$('.start-status').on('click',function(event){
+		var y = event.pageY+10+'px';
+		$('#startedRecords').css('top',y);
+		console.log(event)
 		event.stopPropagation();
 		window.event.cancelBubble = true;
 		var dataset = $(this).parent()[0].dataset;
@@ -376,50 +414,41 @@ function getRunTimeColor(stage,range){
 }
 
 function addWorkflowEvent(){
-	$('.extend>img').on('click',function(){
-		var extended = $(this).hasClass('extended');
-		if(extended){
-			$(this).removeClass('extended');
-			$(this).attr('src','assets/images/icon-collapse.png');
-		}else{
-			$(this).addClass('extended');
-			$(this).attr('src','assets/images/icon-extend.png');
-		}
+	$('.extend').on('click',function(){
 		var dataset = $(this)[0].dataset;
 		var workflowName = dataset.workflowname;
 		var workflowId = dataset.workflowid;
-		isGetVersions(workflowName,workflowId,$(this));
+		var $selector = $(this).find('img');
+		isGetVersions(workflowName,workflowId,$selector);
 	})
 }
 
-function isGetVersions (workflowName,workflowId,selector){
-	var hasWorkflow = $(selector).hasClass('hasWorkflow');
+function isGetVersions (workflowName,workflowId,$selector){
+	var extended = $selector.hasClass('extended');
+	if(extended){
+		$selector.removeClass('extended');
+		$selector.attr('src','assets/images/icon-collapse.png');
+	}else{
+		$selector.addClass('extended');
+		$selector.attr('src','assets/images/icon-extend.png');
+	}
+	var hasWorkflow = $selector.hasClass('hasWorkflow');
 	if(!hasWorkflow){
-		$(selector).addClass('hasWorkflow');
+		$selector.addClass('hasWorkflow');
 		getVersions(workflowName,workflowId)
 	}
 }
 
 function getStartedWorkflows(workflowName,workflowId,version,sequence,sequenceId,stageName,actionId,actionName){
-	// var params = {
-	// 	url:resUrl.startedWorkflow.replace(/{workflowName}/g,workflowName).replace(/{versionName}/g,version.versionName).replace(/{sequence}/g,sequence).replace(/{actionName}/g,actionName).replace(/{workflowID}/g,sequenceId).replace(/{actionID}/g,actionId),
-	// 	type:'GET',
-	// 	callback:function(data){
-	// 		currentStartedWorkflows = data;
-	// 		isShowBounced(workflowDialog,true);
-	// 		addCloseEvent(workflowDialog);
-	// 		rendStartedActionInfo(workflowName,version.versionName,stageName,actionName,breadcrumbs);
-	// 		renderStartedWorkflows(currentStartedWorkflows,startedRecords);
-	// 	}
-	// };
 	var promise = historyDataService.getStartedWorkflows(workflowName,workflowId,version,sequence,sequenceId,stageName,actionId,actionName);
 	promise.done(function(data) {
-    loading.hide();
+    	loading.hide();
 		currentStartedWorkflows = data;
 		isShowBounced(workflowDialog,true);
 		addCloseEvent(workflowDialog);
 		rendStartedActionInfo(workflowName,version.versionName,stageName,actionName,breadcrumbs);
 		renderStartedWorkflows(currentStartedWorkflows,startedRecords);
+		resetMainHeight();
   });
   promise.fail(function(xhr, status, error) {
     loading.hide();
@@ -438,19 +467,29 @@ function rendStartedActionInfo(workflowName,versionName,stageName,actionName,sel
 
 function renderStartedWorkflows(workflows,selector){
 	var recordItem = '';
-	var records = '<div class="record-info">';
+	var records = '';
 	workflows.map(function(s,i){
 		var isStagesBg = i%2===0?'bg-stage':'';
 		var isBorder = i%2===0? '':'border-record ';
 		recordItem += '<div class="item-record '+isBorder+'">';
-		var workflowName = '<div class="workflow-name">'+s.workflowName+'：</div>';
+		var workflowName = s.workflowName.length>=15?s.workflowName.slice(0,15)+'...':s.workflowName;
+		var workflowName = '<div class="workflow-name">'+workflowName+'</div>';
+
+		var startedWorkflowName = '';
+
+		if(s.startWorkflowName){
+			startedWorkflowName = '<img src="../../assets/images/preworkflow.png" class="year" title="'+s.startWorkflowName+'">';
+		}
+
+		var arr = s.date.split('-');
 
 		var time='<div class="time">'+
-					      '<span class="date">'+s.date+'</span>'+
+					      startedWorkflowName+
+					      '<span class="date">'+arr[1]+'-'+arr[2]+'</span>'+
 					      '<span class="hour">'+s.time+'</span>'+
 					    '</div>';
 
-		var stages = '<div class="stages '+isStagesBg+'">';
+		var stages = '<div class="stages '+isStagesBg+'"><div class="wrap">';
 
 		s.stages.map(function(st,i){
 			var stageResult = '';
@@ -460,8 +499,9 @@ function renderStartedWorkflows(workflows,selector){
 				stageResult = stageColor[st.runResult];
 			}
 
+			var error = st['error'] ? 'title="'+st['error']+'"': '';
 			var stagesItem = '<div class="item-stage">'+
-            						'<h5 class="stage-name '+stageResult+'"></h5>';
+            						'<h5 class="stage-name '+stageResult+'" '+error+'></h5>';
 			var actions = '';
 
 			if(st.actions.length>0){
@@ -503,7 +543,7 @@ function renderStartedWorkflows(workflows,selector){
 			stages+=stagesItem;
 		})
 
-		stages+='</div>';
+		stages+='</div></div>';
 
 		recordItem=recordItem+workflowName+time+stages;
 		recordItem+='</div>';
@@ -512,6 +552,7 @@ function renderStartedWorkflows(workflows,selector){
 	records=records+recordItem+'</div>';
 	$(selector).html(records);
 
+	resetWrapWidth();
 	addActionDetailEvent('#workflowDialog .action-name');
 }
 
@@ -533,7 +574,7 @@ function getPages(totalNum,selector){
 			onChange: function(currentPage){
 				currentPage = currentPage;
 				isInitPages = false;
-				getWorkflows(currentPage,workflowNum,isInitPages,filterWorkflow,filterType)
+				getWorkflows(currentPage,workflowNum,isInitPages,filterWorkflow,'fuzzy');
 			}
 		})
 	}
@@ -541,6 +582,14 @@ function getPages(totalNum,selector){
 
 function clearOldData(selector){
 	$(selector).empty();
+}
+
+function resetMainHeight(){
+	var pad = 50;
+	var height = $('#startedRecords').height();
+	var mainHeight = $('#main').height();
+	var totalHeight = pad + height + mainHeight + 'px';
+	$('#main').css('height',totalHeight);
 }
 
 export function addFilterWorklowEvent(){

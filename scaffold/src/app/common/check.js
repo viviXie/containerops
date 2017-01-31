@@ -33,7 +33,9 @@ export function workflowCheck(data,setting){
         }
     }
 
-    completeness = checkSetting(setting);
+    if(completeness){
+        completeness = checkSetting(setting);
+    }
 
     if(completeness){
         notify("Workflow is available.","success");
@@ -429,6 +431,20 @@ function checkSetting(setting){
                 completeness = checkCronTask(cron);
                 if(!completeness){
                     notify("Cron entry of timed task No. " + (i+1) + " is illegal ---- < Workflow setting >","info");
+                    break;
+                }
+
+                if(_.isEmpty(setting.data.timedTasks.tasks[i].eventType)){
+                    notify("Event type of timed task No. " + (i+1) + " is required ---- < Workflow setting >","info");
+                    completeness = false;
+                    break;
+                }else if(_.isEmpty(setting.data.timedTasks.tasks[i].eventName)){
+                    notify("Event name of timed task No. " + (i+1) + " is required ---- < Workflow setting >","info");
+                    completeness = false;
+                    break;
+                }else if(_.isEmpty(setting.data.timedTasks.tasks[i].startJson)){
+                    notify("Start json of timed task No. " + (i+1) + " is required ---- < Workflow setting >","info");
+                    completeness = false;
                     break;
                 }
             }

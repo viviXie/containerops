@@ -32,10 +32,11 @@ import (
 )
 
 const (
-	WorkflowStopReasonTimeout = "TIME_OUT"
+	WorkflowStopReasonInstanceFull = "NO_ROOM_FOR_RUN_INSTANCE"
+	WorkflowStopReasonTimeout      = "TIME_OUT"
 
-	WorkflowStopReasonRunSuccess = "RunSuccess"
-	WorkflowStopReasonRunFailed  = "RunFailed"
+	WorkflowStopReasonRunSuccess = "WORKFLOW_RUN_SUCCESS"
+	WorkflowStopReasonRunFailed  = "WORKFLOW_RUN_FAILED"
 )
 
 var (
@@ -141,7 +142,7 @@ func GetWorkflowListByNamespaceAndRepository(namespace, repository string) ([]ma
 
 				latestWorkflowLog := new(models.WorkflowLog)
 				err := latestWorkflowLog.GetWorkflowLog().Where("from_workflow = ?", workflowVersion.ID).Order("-id").First(latestWorkflowLog).Error
-				if err != nil {
+				if err != nil && err.Error() != "record not found" {
 					log.Error("[workflow's GetWorkflowListByNamespaceAndRepository]:error when get workflow's latest run info:", err.Error())
 				}
 
@@ -211,7 +212,15 @@ func GetWorkflowInfo(namespace, repository, workflowName string, workflowId int6
 
 	resultMap["lineList"] = make([]map[string]interface{}, 0)
 
-	resultMap["setting"] = make(map[string]interface{})
+	resultMap["setting"] = map[string]interface{}{
+		"data": map[string]interface{}{
+			"runningInstances": map[string]interface{}{
+				"available": false,
+				"number":    10},
+			"timedTasks": map[string]interface{}{
+				"available": false,
+				"tasks":     make([]interface{}, 0),
+			}}}
 
 	resultMap["status"] = false
 
@@ -300,6 +309,11 @@ func Run(workflowId int64, authMap map[string]interface{}, startData string) (*W
 		log.Error("[workflow's Run]:error when get workflow's info from db:", err.Error())
 		return nil, errors.New("error when get target workflow info:" + err.Error())
 	}
+
+	if workflowInfo.State == models.WorkflowStateDisable {
+		return nil, errors.New("workflow is not runnable")
+	}
+
 	workflow := new(Workflow)
 	workflow.Workflow = workflowInfo
 
@@ -313,6 +327,14 @@ func Run(workflowId int64, authMap map[string]interface{}, startData string) (*W
 	if !ok {
 		log.Error("[workflow's Run]:error when parse eventName,want a string, got:", authMap["eventType"])
 		return nil, errors.New("error when get eventType")
+	}
+
+	if eventType == "github" {
+		for event, realName := range allEventMap["github"] {
+			if realName == eventName {
+				eventName = event
+			}
+		}
 	}
 
 	eventMap := make(map[string]string)
@@ -347,8 +369,6 @@ func GetWorkflowList(namespace, repository string, page, prePageCount int64, fil
 		filter = "%" + filter + "%"
 	}
 
-	db := new(models.WorkflowLog).GetWorkflowLog().Where("namespace = ?", namespace).Where("repository = ?", repository).Where("workflow like ?", filter).Order("-id").Group("workflow")
-
 	workflowList := make([]models.WorkflowLog, 0)
 	err := models.GetDB().Raw("SELECT * FROM (SELECT * FROM workflow_log WHERE `workflow_log`.deleted_at IS NULL AND workflow like ? AND workflow_log.namespace = ? AND workflow_log.repository = ? ORDER BY id DESC) i GROUP BY i.workflow LIMIT ? OFFSET ?", filter, namespace, repository, prePageCount, (page-1)*prePageCount).Scan(&workflowList).Error
 	if err != nil && err.Error() != "record not found" {
@@ -356,8 +376,10 @@ func GetWorkflowList(namespace, repository string, page, prePageCount int64, fil
 		return nil, errors.New("error when get workflow list")
 	}
 
-	count := int64(0)
-	err = db.Count(&count).Error
+	count := new(struct {
+		Count int64
+	})
+	err = models.GetDB().Raw("select count(distinct(workflow)) as count from workflow_log where deleted_at IS NULL and namespace = ? and repository = ? and workflow like ?", namespace, repository, filter).Scan(count).Error
 	if err != nil && err.Error() != "sql: no rows in result set" {
 		log.Error("[workflow's GetWorkflowList]:error when count workfow num from db:", err.Error())
 		return nil, errors.New("error when get workflow list")
@@ -372,7 +394,7 @@ func GetWorkflowList(namespace, repository string, page, prePageCount int64, fil
 		workflows = append(workflows, tempMap)
 	}
 
-	result["totalWorkflows"] = count
+	result["totalWorkflows"] = count.Count
 	result["workflows"] = workflows
 
 	return result, nil
@@ -402,8 +424,12 @@ func GetWorkflowVersionList(namespace, repository, workflow string, workflowID i
 func GetWorkflowSequenceList(namespace, repository, workflow, version string, versionID, sum int64) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
 
+	if sum < 1 || sum < 100 {
+		sum = 10
+	}
+
 	workflows := make([]models.WorkflowLog, 0)
-	err := new(models.WorkflowLog).GetWorkflowLog().Where("namespace = ?", namespace).Where("repository = ?", repository).Where("workflow = ?", workflow).Where("version = ?", version).Where("run_state > ?", 1).Order("-updated_at").Limit(int(sum)).Find(&workflows).Error
+	err := new(models.WorkflowLog).GetWorkflowLog().Where("namespace = ?", namespace).Where("repository = ?", repository).Where("workflow = ?", workflow).Where("version = ?", version).Where("run_state > ?", 1).Order("-id").Limit(int(sum)).Find(&workflows).Error
 	if err != nil {
 		log.Error("[workflow's GetWorkflowSequenceList]:error when get workflow run log from db:", err.Error())
 		return nil, errors.New("error when get sequence info")
@@ -417,6 +443,16 @@ func GetWorkflowSequenceList(namespace, repository, workflow, version string, ve
 		sequenceMap["runResult"] = workflowInfo.RunState
 		sequenceMap["date"] = workflowInfo.CreatedAt.Format("2006-01-02")
 		sequenceMap["time"] = workflowInfo.CreatedAt.Format("15:04")
+		sequenceMap["error"] = workflowInfo.FailReason
+		if workflowInfo.PreWorkflow != 0 {
+			preWorkflow := new(models.WorkflowLog)
+			err := preWorkflow.GetWorkflowLog().Where("id = ?", workflowInfo.PreWorkflow).First(&preWorkflow).Error
+			if err != nil {
+				log.Error("[workflow's GetWorkflowSequenceList]:error when get preworkflow info from db:", err.Error())
+			} else {
+				sequenceMap["startWorkflowName"] = preWorkflow.Workflow
+			}
+		}
 		stageList, err := getSequenceStageInfo(namespace, repository, workflowInfo.ID, workflowInfo.Sequence)
 		if err != nil {
 			log.Error("[workflow's GetWorkflowSequenceList]:error when get sequence's stage list:", err.Error())
@@ -485,6 +521,7 @@ func getSequenceStageInfo(namespace, repository string, workflow, sequence int64
 		stageMap["isTimeout"] = stageInfo.FailReason == StageStopReasonTimeout
 		stageMap["timeout"] = stageInfo.Timeout
 		stageMap["runTime"] = strconv.FormatFloat(stageInfo.UpdatedAt.Sub(stageInfo.CreatedAt).Seconds(), 'f', 0, 64)
+		stageMap["error"] = stageInfo.FailReason
 		actionList, err := getSequenceActionInfo(namespace, repository, stageInfo.Workflow, stageInfo.Sequence, stageInfo.ID)
 		if err != nil {
 			log.Error("[workflow's getSequenceStageInfo]:error when get sequence's action list:", err.Error())
@@ -533,6 +570,7 @@ func getSequenceActionInfo(namespace, repository string, workflow, sequence, sta
 		actionMap["runTime"] = strconv.FormatFloat(actionInfo.UpdatedAt.Sub(actionInfo.CreatedAt).Seconds(), 'f', 0, 64)
 		actionMap["isStartWorkflow"] = len(linkStartWorkflows) > 0
 		actionMap["startWorkflowResult"] = runResult
+		actionMap["error"] = actionInfo.FailReason
 
 		result = append(result, actionMap)
 	}
@@ -1034,6 +1072,62 @@ func (workflowInfo *Workflow) UpdateWorkflowInfo(define map[string]interface{}) 
 }
 
 func (workflow *Workflow) updateTimerTask(taskMap map[string]interface{}) error {
+	db := models.GetDB().Begin()
+	available, ok := taskMap["available"].(bool)
+	if !ok {
+		available = false
+	}
+
+	db.Model(&models.Timer{}).Where("namespace = ?", workflow.Namespace).Where("repository = ?", workflow.Repository).Where("workflow = ?", workflow.ID).Delete(&models.Timer{})
+	if taskList, ok := taskMap["tasks"].([]interface{}); ok {
+		for _, task := range taskList {
+			if taskMap, ok := task.(map[string]interface{}); ok {
+				cron, ok := taskMap["cronEntry"].(string)
+				if !ok {
+					log.Error("[workflow's updateTimerTask]:error when get cronEntry:want a string, got:", taskMap["cronEntry"])
+					continue
+				}
+
+				if len(strings.Split(cron, " ")) == 5 {
+					cron = "0 " + cron
+				}
+
+				eventName, ok := taskMap["eventName"].(string)
+				if !ok {
+					log.Error("[workflow's updateTimerTask]:error when get eventName:want a string, got:", taskMap["eventName"])
+					continue
+				}
+
+				eventType, ok := taskMap["eventType"].(string)
+				if !ok {
+					log.Error("[workflow's updateTimerTask]:error when get eventType:want a string, got:", taskMap["eventType"])
+					continue
+				}
+
+				startJson, ok := taskMap["startJson"].(map[string]interface{})
+				if !ok {
+					log.Error("[workflow's updateTimerTask]:error when get startJson:want a json obj, got:", taskMap["startJson"])
+					continue
+				}
+
+				startJsonBytes, _ := json.Marshal(startJson)
+
+				timer := new(models.Timer)
+				timer.Namespace = workflow.Namespace
+				timer.Repository = workflow.Repository
+				timer.Workflow = workflow.ID
+				timer.Available = available
+				timer.Cron = cron
+				timer.EventType = eventType
+				timer.EventName = eventName
+				timer.StartJson = string(startJsonBytes)
+
+				db.Save(timer)
+			}
+		}
+	}
+	db.Commit()
+	UpdateWorkflowTimer(workflow.Namespace, workflow.Repository, workflow.ID)
 	return nil
 }
 
@@ -1212,27 +1306,38 @@ func (workflowInfo *Workflow) BeforeExecCheck(reqHeader http.Header, reqBody []b
 		if c.Support(eventInfoMap) {
 			passCheck, err = c.Check(eventInfoMap, expectedToken, reqHeader, reqBody)
 			if !passCheck {
-				log.Error("[workflow's BeforeExecCheck]:check failed:", c, "===>", err, "\neventInfoMap:", eventInfoMap, "\nreqHeader:", reqHeader, "\nreqBody:", string(reqBody))
+				// log.Error("[workflow's BeforeExecCheck]:check failed:", c, "===>", err, "\neventInfoMap:", eventInfoMap, "\nreqHeader:", reqHeader, "\nreqBody:", string(reqBody))
+				log.Error("[workflow's BeforeExecCheck]:check failed:", c, "===>", err)
 				return false, nil, errors.New("failed when check exec req")
 			}
 		}
 	}
 
 	// check run instance number
+	pass, err := checkInstanceNum(workflowInfo.ID)
+	if !pass {
+		return false, nil, err
+	}
+
+	return passCheck, eventInfoMap, nil
+}
+
+func checkInstanceNum(workflowInfoID int64) (bool, error) {
+	// check run instance number
 	db := models.GetDB().Begin()
 	workflow := new(models.Workflow)
-	err = db.Raw("select * from workflow where id = ? for update", workflowInfo.ID).Scan(workflow).Error
+	err := db.Raw("select * from workflow where id = ? for update", workflowInfoID).Scan(workflow).Error
 	if err != nil {
 		log.Error("[workflow's BeforeExecCheck]:error when get workflow info  from db:", err.Error())
 		db.Rollback()
-		return false, nil, errors.New("failed when check exec req")
+		return false, errors.New("failed when check exec req")
 	}
 
 	if workflow.IsLimitInstance {
 		if workflow.LimitInstance <= workflow.CurrentInstance {
 			log.Error("[workflow's BeforeExecCheck]:workflow:", workflow.Workflow, " current run:", workflow.CurrentInstance, " max run num:", workflow.LimitInstance, " start failed ...")
 			db.Rollback()
-			return false, nil, errors.New("no useable run instance")
+			return false, errors.New("no useable run instance")
 		}
 	}
 
@@ -1240,7 +1345,8 @@ func (workflowInfo *Workflow) BeforeExecCheck(reqHeader http.Header, reqBody []b
 
 	db.Save(workflow)
 	db.Commit()
-	return passCheck, eventInfoMap, nil
+
+	return true, nil
 }
 
 func getExecReqEventInfo(sourceList []interface{}, reqHeader http.Header) (map[string]string, error) {

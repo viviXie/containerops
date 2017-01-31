@@ -21,14 +21,14 @@ import { notify } from "../common/notify";
 import { getActionHistory } from "./actionHistory";
 import { getContainerLogs } from "./actionHistory";
 import { getLineHistory } from "./lineHistory";
-import { getHistoryList,addFilterWorklowEvent } from "./historyList";
+import { getHistoryList,addFilterWorklowEvent,getSequenceNum } from "./historyList";
 import {changeCurrentElement} from "../common/util";
 import * as sequenceUtil from "./initUtil";
 
 var filterType = 'fuzzy';
 export function initHistoryPage() {
     var type = arguments.length===0 ? 'fuzzy': 'exact';
-    var keywords = arguments.length===0 ? '-1': arguments[0];
+    var keywords = arguments.length===0 ? '': arguments[0];
     clearTimeout(timer);
     setFilterType(type);
     getHistory(keywords,filterType);  
@@ -42,6 +42,7 @@ function getHistory(keywords,filterType) {
         success: function(data) {
             $("#main").html($(data));
             addFilterWorklowEvent();
+            getSequenceNum();
             getHistoryList(keywords,filterType);
         }
     });
@@ -866,11 +867,11 @@ function initSequenceActionByStage() {
                     var x = ad.translateX;
                     var y = ad.translateY + constant.svgActionHeight;
                     let text = "";
-                    let width = null;
+                    let width = 150;
                     let options = {};
                     if (ad.setupData && ad.setupData.name && ad.setupData.name != "") {
                         text = ad.setupData.name;
-                        width = text.length * 7 + 20;
+                        width = text.length * 12 + 20;
                         options = {
                             "x": x,
                             "y": y,
